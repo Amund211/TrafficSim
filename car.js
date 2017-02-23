@@ -1,45 +1,47 @@
-function car(id, lane, agressive, targetSpeed) {
-	// Cars often get stuck when transitioning from start to end early in the simulation
-	// Conditions for lanechange have to bet met for a continous time period before the switch happens
-	this.id = id;
-	this.agressive = agressive || int(random(1, 6));
+class car {
+	constructor(id, lane=int(random(0, AMTLANES)), agressive=int(random(1, 6)), targetSpeed=random(1, 2)) {
+		// Cars often get stuck when transitioning from start to end early in the simulation
+		// Conditions for lanechange have to bet met for a continous time period before the switch happens
+		this.id = id;
+		this.agressive = agressive;
 
-	this.lane = lane || int(random(0, AMTLANES));
-	// also relate average speed to targetSpeed - circumventing full left lane
-	// this.targetSpeed = targetSpeed || random(1.90, 2);
-	this.targetSpeed = targetSpeed || random(1, 2);
+		this.lane = lane;
+		// also relate average speed to targetSpeed - circumventing full left lane
+		// this.targetSpeed = targetSpeed || random(1.90, 2);
+		this.targetSpeed = targetSpeed;
 
-	this.speedMargin = map(this.agressive, 1, 5, this.targetSpeed * (20/100), this.targetSpeed * (2/100));
+		this.speedMargin = map(this.agressive, 1, 5, this.targetSpeed * (20/100), this.targetSpeed * (2/100));
 
-	this.timeMargin = map(this.agressive, 1, 5, 2, 0.5);
-	this.cooldown = map(this.agressive, 1, 5, 5, 1)
+		this.timeMargin = map(this.agressive, 1, 5, 2, 0.5);
+		this.cooldown = map(this.agressive, 1, 5, 5, 1)
 
 
-	// Full stop in x seconds (timeMargin - 0.1) - should never crash
-	// Use timeMargin??
-	this.acceleration = this.targetSpeed / (60 * (this.timeMargin - 0.1));
-	// this.acceleration = this.targetSpeed / (60 * 1);
-	// this.timeMargin = 1;
-	// this.cooldown = 2;
+		// Full stop in x seconds (timeMargin - 0.1) - should never crash
+		// Use timeMargin??
+		this.acceleration = this.targetSpeed / (60 * (this.timeMargin - 0.1));
+		// this.acceleration = this.targetSpeed / (60 * 1);
+		// this.timeMargin = 1;
+		// this.cooldown = 2;
 
-	// Amount of time since the car crashed
-	this.collisionTime = 0;
-	// Amount of frames since lane change
-	this.framesSinceLC = 0;
-	// Current speed
-	this.speed = 0;
-	// speed as percentage of targetSpeed
-	this.efficiency = 0;
-	// Whether the car is on - turns off in a crash
-	this.on = true;
-	// Whether the car sped up the last frame
-	this.accelerating = false;
+		// Amount of time since the car crashed
+		this.collisionTime = 0;
+		// Amount of frames since lane change
+		this.framesSinceLC = 0;
+		// Current speed
+		this.speed = 0;
+		// speed as percentage of targetSpeed
+		this.efficiency = 0;
+		// Whether the car is on - turns off in a crash
+		this.on = true;
+		// Whether the car sped up the last frame
+		this.accelerating = false;
 
-	this.size = createVector(CARSIZE[0], CARSIZE[1]);
-	// Logic y
-	this.y = random(this.size.y, TOTALHEIGHT - this.size.y);
+		this.size = createVector(CARSIZE[0], CARSIZE[1]);
+		// Logic y
+		this.y = random(this.size.y, TOTALHEIGHT - this.size.y);
+	}
 
-	this.render = function() {
+	render() {
 		// Draws car in color based on speed
 		if (this.targetSpeed != 0) {
 			this.efficiency = this.speed / this.targetSpeed;
@@ -47,7 +49,7 @@ function car(id, lane, agressive, targetSpeed) {
 			this.efficiency = 1
 		}
 		// Color based on speed
-		var c;
+		let c;
 		if (this.speed < this.targetSpeed - this.speedMargin - 0.1) {
 			c = color(255, 0, 0);
 		} else {
@@ -60,7 +62,7 @@ function car(id, lane, agressive, targetSpeed) {
 		// Position
 		// this.y = 0 corresponds to screenY of - this.size.y
 		this.screenY = (this.y) % ROADTRUEHEIGHT - this.size.y;
-		var roadNum = (Math.floor((this.y) / ROADTRUEHEIGHT));
+		let roadNum = (Math.floor((this.y) / ROADTRUEHEIGHT));
 		this.screenX = (roadNum * ROADWIDTH) + (LANEWIDTH * this.lane) + (ROADDIST * 3 / 2);
 
 		fill(c);
@@ -79,7 +81,7 @@ function car(id, lane, agressive, targetSpeed) {
 		// text(this.id, this.screenX + 3, this.screenY + this.size.y / 2);
 	}
 
-	this.drive = function() {
+	drive() {
 		// Overhead logic for car
 		if (this.on) {
 			// rebound when off screen
@@ -105,7 +107,7 @@ function car(id, lane, agressive, targetSpeed) {
 		}
 	}
 
-	this.offscreen = function() {
+	offscreen() {
 		// rebound when off screen
 		if (this.y >= TOTALHEIGHT) {
 			this.y = 1;
@@ -114,10 +116,11 @@ function car(id, lane, agressive, targetSpeed) {
 		}
 	}
 
-	this.carInLane = function(dir) {
+	carInLane(dir) {
 		// Returns the car directly (f)orwards or (b)ackwards from current car
-		var closest = [Math.pow(10, 6), -1];
-		for (var i = 0; i < cars.length; i++) {
+		let closest = [Math.pow(10, 6), -1];
+		let distance;
+		for (let i = 0; i < cars.length; i++) {
 			if (this.lane == cars[i].lane) {
 				if (this.id != cars[i].id) {
 					distance = this.carDist(i, dir);
@@ -134,9 +137,9 @@ function car(id, lane, agressive, targetSpeed) {
 		}
 	}
 
-	this.carDist = function(index, dir) {
+	carDist(index, dir) {
 		// Returns distance to car in lane (f)orwards or (b)ackwards
-		var distance;
+		let distance;
 		if (dir == "f") {
 			if (this.y >= cars[index].y) {
 				// They are infront of me
@@ -162,10 +165,10 @@ function car(id, lane, agressive, targetSpeed) {
 		return distance;
 	}
 
-	this.colliding = function() {
+	colliding() {
 		// Iterates over all cars and checks if distance forwards or backwards
 		// is less than 0
-		for (var i = 0; i < cars.length; i++) {
+		for (let i = 0; i < cars.length; i++) {
 			if (this.lane == cars[i].lane) {
 				if (this.id != cars[i].id) {
 					if (this.carDist(i, "f") < 0 || this.carDist(i, "b") < 0) {
@@ -177,21 +180,21 @@ function car(id, lane, agressive, targetSpeed) {
 		return false;
 	}
 
-	this.spaceInLane = function(dir) {
+	spaceInLane(dir) {
 		// Returns boolean based on whether there is space in the lane given
 		// (+1 / -1)
 		// Creates a dummy car in applicable lane, and checks the space required
 		// by the current car based on timeMargin
 
-		var tmpCar = new car(-1);
+		let tmpCar = new car(-1);
 		tmpCar.lane = this.lane + dir;
-		var travXSeconds = this.speed * fr * this.timeMargin;
+		let travXSeconds = this.speed * fr * this.timeMargin;
 
-		var b = this.y - travXSeconds;
-		var t = this.y + travXSeconds;
+		let b = this.y - travXSeconds;
+		let t = this.y + travXSeconds;
 
-		for (var pos = b; pos <= t + tmpCar.size.y; pos += tmpCar.size.y - 1) {
-			var carPos = pos;
+		for (let pos = b; pos <= t + tmpCar.size.y; pos += tmpCar.size.y - 1) {
+			let carPos = pos;
 			if (carPos < 0) {
 				carPos += TOTALHEIGHT;
 			} else if (carPos >= TOTALHEIGHT) {
@@ -205,10 +208,10 @@ function car(id, lane, agressive, targetSpeed) {
 		return true;
 	}
 
-	this.adjustSpeed = function() {
+	adjustSpeed() {
 		// Adjusts the speed of current car based on space infront
-		var infrontIndex = this.carInLane("f");
-		var newSpeed;
+		let infrontIndex = this.carInLane("f");
+		let newSpeed;
 		if (infrontIndex !== false) {
 			// (fr = 60)
 			// dist / (speed * 60) = timeMargin
@@ -220,7 +223,7 @@ function car(id, lane, agressive, targetSpeed) {
 		} else {
 			newSpeed = this.targetSpeed;
 		}
-		var speedDiff = newSpeed - this.speed;
+		let speedDiff = newSpeed - this.speed;
 		if (abs(speedDiff) > this.acceleration) {
 			this.speed += Math.sign(speedDiff) * this.acceleration;
 			this.accelerating = true;
@@ -230,7 +233,7 @@ function car(id, lane, agressive, targetSpeed) {
 		}
 	}
 
-	this.laneChange = function() {
+	laneChange() {
 		// Logic:
 		// If moving slow -> switch left
 		// Not moving slow -> switch right
@@ -238,9 +241,9 @@ function car(id, lane, agressive, targetSpeed) {
 		// Restrictions:
 		// time since lanechange
 		// spaceInLane
-		var wantFasterLane = this.speed < this.targetSpeed - this.speedMargin
-		var waitInLane;
-		var infrontIndex = this.carInLane("f");
+		let wantFasterLane = this.speed < this.targetSpeed - this.speedMargin
+		let waitInLane;
+		let infrontIndex = this.carInLane("f");
 		if (infrontIndex !== false) {
 			waitInLane = cars[infrontIndex].accelerating && cars[infrontIndex].targetSpeed > this.targetSpeed;
 		} else {
