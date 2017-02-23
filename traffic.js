@@ -1,4 +1,4 @@
-var cars = [];
+var drivers = [];
 var AMTLANES = 2;
 var AMTCARS = 50;
 
@@ -53,10 +53,10 @@ var totEffT;
 
 var fr;
 
-function delCar(index) {
-	cars.splice(index, 1);
-	for (var car = 0; car < cars.length; car++) {
-		cars[car].id = car
+function delDriver(index) {
+	drivers.splice(index, 1);
+	for (var i = 0; i < drivers.length; i++) {
+		drivers[i].id = i
 	}
 }
 
@@ -66,35 +66,35 @@ function setup() {
 	// totEffT = createInput();
 	fr = int(frameRate());
 
-	createCars:
+	createDrivers:
 		for (var i = 0; i < AMTCARS; i++) {
-			// Creating a new car
-			cars.push(new car(i));
+			// Creating a new driver
+			drivers.push(new human(i));
 			// Checking for collision
-			var lastIndex = cars.length - 1;
+			var lastIndex = drivers.length - 1;
 			var attempts = 0;
-			while (cars[lastIndex].colliding()) {
+			while (drivers[lastIndex].colliding()) {
 				// While colliding move "upwards" until not colliding, then settle
 				// Or having been all the way around, then delete
-				cars[lastIndex].y += 10;
+				drivers[lastIndex].y += 10;
 				// Rebound when offscreen
-				cars[lastIndex].offscreen();
+				drivers[lastIndex].offscreen();
 				attempts += 1;
 				if (attempts > TOTALHEIGHT/10) {
-					cars.splice(lastIndex, 1);
-					// break createCars;
+					drivers.splice(lastIndex, 1);
+					// break createDrivers;
 					break
 				}
 			}
 		}
-	console.log("Created " + cars.length + " cars on length " + TOTALHEIGHT + " canvas.");
+	console.log("Created " + drivers.length + " drivers on length " + TOTALHEIGHT + " canvas.");
 	// Having some issues with variable framerate
 	// fr = int(frameRate());
 	fr = 60;
 	// Simulating driving
 	for (var itr = 0; itr < SIMULATIONFRAMES; itr++) {
-		for (var i = 0; i < cars.length; i++) {
-			cars[i].drive();
+		for (var i = 0; i < drivers.length; i++) {
+			drivers[i].drive();
 		}
 	}
 	console.log("Simulated for " + SIMULATIONFRAMES + " frames")
@@ -105,8 +105,8 @@ function draw() {
 	fr = 60;
 	// Driving
 	for (var itr = 0; itr < ANIMATIONSPEED; itr++) {
-		for (var i = 0; i < cars.length; i++) {
-			cars[i].drive();
+		for (var i = 0; i < drivers.length; i++) {
+			drivers[i].drive();
 		}
 	}
 
@@ -114,14 +114,14 @@ function draw() {
 
 	// Rendering and data gathering
 	background(0);
-	for (var i = 0; i < cars.length; i++) {
-		cars[i].render();
-		efficiency += cars[i].efficiency
+	for (var i = 0; i < drivers.length; i++) {
+		drivers[i].render();
+		efficiency += drivers[i].efficiency
 	}
 
 	// Efficiency calc
 	// To percent as average
-	efficiency /= cars.length / 100
+	efficiency /= drivers.length / 100
 
 	// Add to total average across entire runtime
 	totalEfficiency[0] += efficiency
@@ -145,19 +145,19 @@ function draw() {
 }
 
 function mousePressed() {
-	for (var i = 0; i < cars.length; i++) {
-		var d = dist(mouseX, mouseY, cars[i].screenX + cars[i].size.x/2, cars[i].screenY + cars[i].size.y/2);
+	for (var i = 0; i < drivers.length; i++) {
+		var d = dist(mouseX, mouseY, drivers[i].screenX + drivers[i].size.x/2, drivers[i].screenY + drivers[i].size.y/2);
 		if (d < 20) {
 			if (mouseButton == LEFT) {
 				console.log(i);
-				// console.log((cars[i].framesSinceLC / fr));
-				// console.log(abs(cars[i].timeMargin - 6));
+				// console.log((drivers[i].framesSinceLC / fr));
+				// console.log(abs(drivers[i].timeMargin - 6));
 				// console.log("");
-				// cars[i].targetSpeed = int(!cars[i].targetSpeed);
-				cars[i].on = false;
-				// cars[i].laneChange()
+				// drivers[i].targetSpeed = int(!drivers[i].targetSpeed);
+				drivers[i].on = false;
+				// drivers[i].laneChange()
 			} else if (mouseButton == RIGHT) {
-				delCar(i);
+				delDriver(i);
 			}
 		}
 	}

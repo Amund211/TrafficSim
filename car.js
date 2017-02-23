@@ -1,6 +1,5 @@
 class car {
 	constructor(id, lane=int(random(0, AMTLANES)), agressive=int(random(1, 6)), targetSpeed=random(1, 2)) {
-		// Cars often get stuck when transitioning from start to end early in the simulation
 		// Conditions for lanechange have to bet met for a continous time period before the switch happens
 		this.id = id;
 		this.agressive = agressive;
@@ -81,32 +80,6 @@ class car {
 		// text(this.id, this.screenX + 3, this.screenY + this.size.y / 2);
 	}
 
-	drive() {
-		// Overhead logic for car
-		if (this.on) {
-			// rebound when off screen
-			this.offscreen();
-
-			// Collision
-			if (this.colliding()) {
-				this.on = false;
-				this.speed = 0;
-				// console.log("Crash: " + this.id)
-			}
-
-			this.adjustSpeed();
-			this.laneChange();
-			this.y -= this.speed - SCROLLSPEED;
-		} else {
-			this.collisionTime += 1;
-			if (this.collisionTime >= fr * 20 || !this.colliding()) {
-				// If a two cars crash one will be removed before the other
-				// Delete this car
-				delCar(this.id)
-			}
-		}
-	}
-
 	offscreen() {
 		// rebound when off screen
 		if (this.y >= TOTALHEIGHT) {
@@ -120,9 +93,9 @@ class car {
 		// Returns the car directly (f)orwards or (b)ackwards from current car
 		let closest = [Math.pow(10, 6), -1];
 		let distance;
-		for (let i = 0; i < cars.length; i++) {
-			if (this.lane == cars[i].lane) {
-				if (this.id != cars[i].id) {
+		for (let i = 0; i < drivers.length; i++) {
+			if (this.lane == drivers[i].lane) {
+				if (this.id != drivers[i].id) {
 					distance = this.carDist(i, dir);
 					if (distance < closest[0]) {
 						closest = [distance, i];
@@ -141,23 +114,23 @@ class car {
 		// Returns distance to car in lane (f)orwards or (b)ackwards
 		let distance;
 		if (dir == "f") {
-			if (this.y >= cars[index].y) {
+			if (this.y >= drivers[index].y) {
 				// They are infront of me
-				distance = this.y - cars[index].y - this.size.y;
+				distance = this.y - drivers[index].y - this.size.y;
 			} else {
 				// They are behind me
 				// + My distance to top
 				// + Their distance to bottom (TOTALHEIGHT - their y)
 				// - Their size.y
-				distance = TOTALHEIGHT + this.y - cars[index].y - cars[index].size.y;
+				distance = TOTALHEIGHT + this.y - drivers[index].y - drivers[index].size.y;
 			}
 		} else if (dir == "b") {
-			if (cars[index].y >= this.y) {
+			if (drivers[index].y >= this.y) {
 				// I am infront of them
-				distance = cars[index].y - this.y - this.size.y;
+				distance = drivers[index].y - this.y - this.size.y;
 			} else {
 				// I am behind them
-				distance = TOTALHEIGHT + cars[index].y - this.y - cars[index].size.y;
+				distance = TOTALHEIGHT + drivers[index].y - this.y - drivers[index].size.y;
 			}
 		} else {
 			throw "Invalid input to carDist: " + dir + ", caller: " + arguments.callee.caller;
@@ -168,9 +141,9 @@ class car {
 	colliding() {
 		// Iterates over all cars and checks if distance forwards or backwards
 		// is less than 0
-		for (let i = 0; i < cars.length; i++) {
-			if (this.lane == cars[i].lane) {
-				if (this.id != cars[i].id) {
+		for (let i = 0; i < drivers.length; i++) {
+			if (this.lane == drivers[i].lane) {
+				if (this.id != drivers[i].id) {
 					if (this.carDist(i, "f") < 0 || this.carDist(i, "b") < 0) {
 						return true;
 					}
@@ -208,120 +181,29 @@ class car {
 		return true;
 	}
 
-	adjustSpeed() {
-		// Adjusts the speed of current car based on space infront
-		let infrontIndex = this.carInLane("f");
-		let newSpeed;
-		if (infrontIndex !== false) {
-			// (fr = 60)
-			// dist / (speed * 60) = timeMargin
-			// dist = timeMargin * speed * 60
-			// dist / (timeMargin * 60) = speed
-			newSpeed = this.carDist(infrontIndex, "f") / (this.timeMargin * fr);
-			newSpeed = Math.min(this.targetSpeed, newSpeed);
-			newSpeed = Math.max(0, newSpeed);
-		} else {
-			newSpeed = this.targetSpeed;
-		}
-		let speedDiff = newSpeed - this.speed;
-		if (abs(speedDiff) > this.acceleration) {
-			this.speed += Math.sign(speedDiff) * this.acceleration;
-			this.accelerating = true;
-		} else {
-			this.speed += speedDiff;
-			this.accelerating = false;
-		}
-	}
+	drive() {
+		// Overhead logic for car
+		if (this.on) {
+			// rebound when off screen
+			this.offscreen();
 
-	laneChange() {
-		// Logic:
-		// If moving slow -> switch left
-		// Not moving slow -> switch right
-		//
-		// Restrictions:
-		// time since lanechange
-		// spaceInLane
-		let wantFasterLane = this.speed < this.targetSpeed - this.speedMargin
-		let waitInLane;
-		let infrontIndex = this.carInLane("f");
-		if (infrontIndex !== false) {
-			waitInLane = cars[infrontIndex].accelerating && cars[infrontIndex].targetSpeed > this.targetSpeed;
-		} else {
-			waitInLane = false;
-		}
-		this.framesSinceLC += 1;
-		if (!wantFasterLane && this.framesSinceLC / fr >= this.cooldown && this.spaceInLane(1) && this.lane != AMTLANES - 1) {
-			// Move right to a slower lane
-			this.lane += 1;
-			this.framesSinceLC = 0;
-		}
-		if (!waitInLane && wantFasterLane && this.framesSinceLC / fr >= this.cooldown && this.spaceInLane(-1) && this.lane != 0) {
-		// Move left to a faster lane
-		// If there is a car in the right lane moving slower than desired?
-			this.lane -= 1;
-			this.framesSinceLC = 0;
-		}
-	}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ALTERNATIVE OLDER VERSION OF laneChange
-
-/*
-this.laneChange = function() {
-	// Current version
-	// Drivers too passive
-	// Clogged right lanes, only those with a high enough targetSpeed will pass
-	// If the lane has completely stopped
-	this.framesSinceLC += 1;
-
-	var infrontIndex = this.carInLane("f");
-	if (infrontIndex !== false) {
-		var wantFasterLane = this.targetSpeed > cars[infrontIndex].targetSpeed && this.speed < this.targetSpeed - this.speedMargin;
-	} else {
-		var wantFasterLane = false;
-	}
-
-	// console.log("ok")
-	if (!wantFasterLane && this.framesSinceLC / fr >= this.cooldown && this.spaceInLane(1) && this.lane != amtLanes - 1) {
-		// Move right to a slower lane
-		this.lane += 1;
-		var tmpSpeed = this.speed;
-		this.adjustSpeed();
-		if (this.speed < this.targetSpeed - this.speedMargin) {
-			this.lane -= 1;
-		} else {
-			this.framesSinceLC = 0;
-		}
-		this.speed = tmpSpeed;
-	}
-	if (infrontIndex !== false) {
-		if (wantFasterLane && this.framesSinceLC / fr >= this.cooldown && this.spaceInLane(-1) && this.lane != 0) {
-		// Move left to a faster lane
-			this.lane -= 1;
-			var tmpSpeed = this.speed;
-			this.adjustSpeed();
-			if (this.speed < this.targetSpeed - this.speedMargin) {
-				this.lane += 1;
-			} else {
-				this.framesSinceLC = 0;
+			// Collision
+			if (this.colliding()) {
+				this.on = false;
+				this.speed = 0;
+				// console.log("Crash: " + this.id)
 			}
-			this.speed = tmpSpeed;
+
+			this.adjustSpeed();
+			this.laneChange();
+			this.y -= this.speed - SCROLLSPEED;
+		} else {
+			this.collisionTime += 1;
+			if (this.collisionTime >= fr * 20 || !this.colliding()) {
+				// If a two cars crash one will be removed before the other
+				// Delete this car
+				delDriver(this.id)
+			}
 		}
 	}
 }
-*/
