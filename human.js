@@ -1,6 +1,21 @@
 class human extends car {
 	constructor(id, lane=int(random(0, AMTLANES)), agressive=int(random(1, 6)), targetSpeed=random(1, 2)) {
-		super(id, lane=int(random(0, AMTLANES)), agressive=int(random(1, 6)), targetSpeed=random(1, 2));
+		let speedMargin = map(agressive, 1, 5, targetSpeed * (20/100), targetSpeed * (2/100));
+		let timeMargin = map(agressive, 1, 5, 2, 0.5);
+		super(
+			id=id,
+			lane=int(random(0, AMTLANES)),
+			timeMargin=timeMargin,
+			speedMargin=speedMargin,
+			targetSpeed=targetSpeed);
+
+		this.agressive = agressive;
+		// Set in car constructor
+		// this.speedMargin = speedMargin;
+		// this.timeMargin = timeMargin;
+		this.cooldown = map(this.agressive, 1, 5, 5, 1);
+
+
 	}
 
 	adjustSpeed() {

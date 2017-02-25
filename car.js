@@ -1,19 +1,15 @@
 class car {
-	constructor(id, lane=int(random(0, AMTLANES)), agressive=int(random(1, 6)), targetSpeed=random(1, 2)) {
+	constructor(id, lane=int(random(0, AMTLANES)), timeMargin=3, speedMargin=3, targetSpeed=random(1, 2)) {
 		// Conditions for lanechange have to bet met for a continous time period before the switch happens
 		this.id = id;
-		this.agressive = agressive;
 
 		this.lane = lane;
 		// also relate average speed to targetSpeed - circumventing full left lane
 		// this.targetSpeed = targetSpeed || random(1.90, 2);
 		this.targetSpeed = targetSpeed;
 
-		this.speedMargin = map(this.agressive, 1, 5, this.targetSpeed * (20/100), this.targetSpeed * (2/100));
-
-		this.timeMargin = map(this.agressive, 1, 5, 2, 0.5);
-		this.cooldown = map(this.agressive, 1, 5, 5, 1)
-
+		this.timeMargin = timeMargin;
+		this.speedMargin = speedMargin;
 
 		// Full stop in x seconds (timeMargin - 0.1) - should never crash
 		// Use timeMargin??
